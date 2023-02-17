@@ -12,12 +12,12 @@ const login = asyncHandler(async(req,res)=>{
     const foundUser = await User.findOne({username}).exec()
 
     if(!foundUser || !foundUser.active){
-        return res.status(401).json({message: 'Unauthorized'})
+        return res.status(401).json({message: 'Yetkisiz giriş'})
     }
 
     const match = await bcrypt.compare(password, foundUser.password)
 
-    if(!match) return res.status(401).json({message: 'Unauthorized'})
+    if(!match) return res.status(401).json({message: 'Yetkisiz giriş'})
 
     const accessToken = jwt.sign(
         {
@@ -27,13 +27,13 @@ const login = asyncHandler(async(req,res)=>{
             }
         },
         process.env.ACCESS_TOKEN_SECRET,
-        {expiresIn: '20s'}
+        {expiresIn: '3m'}
     )
 
     const refreshToken = jwt.sign(
         {"username": foundUser.username},
         process.env.REFRESH_TOKEN_SECRET,
-        {expiresIn : '50s'}
+        {expiresIn : '5m'}
     )
 
     res.cookie('jwt', refreshToken,{
@@ -50,7 +50,7 @@ const login = asyncHandler(async(req,res)=>{
 const refresh = (req,res)=>{
     const cookies = req.cookies
 
-    if(!cookies?.jwt) return res.status(401).json({message:'Unauthorized'})
+    if(!cookies?.jwt) return res.status(401).json({message:'Yetkisiz giriş'})
     
     const refreshToken = cookies.jwt
 
@@ -62,7 +62,7 @@ const refresh = (req,res)=>{
 
             const foundUser = await User.findOne({username : decoded.username})
 
-            if(!foundUser) return res.status(401).json({message: 'Unauthorized'})
+            if(!foundUser) return res.status(401).json({message: 'Yetkisiz giriş'})
 
             const accessToken = jwt.sign(
                 {
